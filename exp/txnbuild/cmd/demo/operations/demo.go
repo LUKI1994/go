@@ -79,17 +79,14 @@ func Reset(client *horizonclient.Client, keys []key) {
 			if b.Type == "native" {
 				continue
 			}
-			asset := txnbuild.Asset{}
-			hAsset := horizon.Asset{
-				Type:   b.Type,
+			asset := txnbuild.CreditAsset{
 				Code:   b.Code,
 				Issuer: b.Issuer,
 			}
-			asset.FromHorizonAsset(hAsset)
 
 			// Send the asset back to the issuer...
-			fmt.Printf("        Sending %v of surplus asset %s:%s back to issuer...\n", b.Balance, hAsset.Code, hAsset.Issuer)
-			txe, err := payment(k.Account, hAsset.Issuer, b.Balance, asset, k)
+			fmt.Printf("        Sending %v of surplus asset %s:%s back to issuer...\n", b.Balance, asset.Code, asset.Issuer)
+			txe, err := payment(k.Account, asset.Issuer, b.Balance, asset, k)
 			dieIfError("Problem building payment op", err)
 			resp := submit(client, txe)
 			fmt.Println(resp.TransactionSuccessToString())
@@ -252,7 +249,7 @@ func payment(source *horizon.Account, dest, amount string, asset txnbuild.Asset,
 	paymentOp := txnbuild.Payment{
 		Destination: dest,
 		Amount:      amount,
-		Asset:       &asset,
+		Asset:       asset,
 	}
 
 	tx := txnbuild.Transaction{
@@ -270,7 +267,7 @@ func payment(source *horizon.Account, dest, amount string, asset txnbuild.Asset,
 }
 
 func deleteTrustline(source *horizon.Account, asset txnbuild.Asset, signer key) (string, error) {
-	deleteTrustline := txnbuild.RemoveTrustlineOp(&asset)
+	deleteTrustline := txnbuild.RemoveTrustlineOp(asset)
 
 	tx := txnbuild.Transaction{
 		SourceAccount: source,

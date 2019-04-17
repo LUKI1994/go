@@ -63,7 +63,7 @@ func TestPayment(t *testing.T) {
 	payment := Payment{
 		Destination: "GB7BDSZU2Y27LYNLALKKALB52WS2IZWYBDGY6EQBLEED3TJOCVMZRH7H",
 		Amount:      "10",
-		Asset:       NewNativeAsset(),
+		Asset:       NativeAsset{},
 	}
 
 	tx := Transaction{
@@ -354,7 +354,7 @@ func TestChangeTrust(t *testing.T) {
 	sourceAccount := makeTestAccount(kp0, "40385577484348")
 
 	changeTrust := ChangeTrust{
-		Line:  NewAsset("ABCD", kp1.Address()),
+		Line:  CreditAsset{"ABCD", kp1.Address()},
 		Limit: "10",
 	}
 
@@ -374,7 +374,7 @@ func TestChangeTrustNativeAssetNotAllowed(t *testing.T) {
 	sourceAccount := makeTestAccount(kp0, "40385577484348")
 
 	changeTrust := ChangeTrust{
-		Line:  NewNativeAsset(),
+		Line:  NativeAsset{},
 		Limit: "10",
 	}
 
@@ -394,7 +394,7 @@ func TestChangeTrustDeleteTrustline(t *testing.T) {
 	kp1 := newKeypair1()
 	sourceAccount := makeTestAccount(kp0, "40385577484354")
 
-	issuedAsset := NewAsset("ABCD", kp1.Address())
+	issuedAsset := CreditAsset{"ABCD", kp1.Address()}
 	removeTrust := RemoveTrustlineOp(issuedAsset)
 
 	tx := Transaction{
@@ -413,7 +413,7 @@ func TestAllowTrust(t *testing.T) {
 	kp1 := newKeypair1()
 	sourceAccount := makeTestAccount(kp0, "40385577484366")
 
-	issuedAsset := NewAsset("ABCD", kp1.Address())
+	issuedAsset := CreditAsset{"ABCD", kp1.Address()}
 	allowTrust := AllowTrust{
 		Trustor:   kp1.Address(),
 		Type:      issuedAsset,
@@ -436,8 +436,8 @@ func TestManageOfferNewOffer(t *testing.T) {
 	kp1 := newKeypair1()
 	sourceAccount := makeTestAccount(kp1, "41137196761092")
 
-	selling := NewNativeAsset()
-	buying := NewAsset("ABCD", kp0.Address())
+	selling := NativeAsset{}
+	buying := CreditAsset{"ABCD", kp0.Address()}
 	sellAmount := "100"
 	price := "0.01"
 	createOffer := CreateOfferOp(selling, buying, sellAmount, price)
@@ -476,8 +476,8 @@ func TestManageOfferUpdateOffer(t *testing.T) {
 	kp1 := newKeypair1()
 	sourceAccount := makeTestAccount(kp1, "41137196761097")
 
-	selling := NewNativeAsset()
-	buying := NewAsset("ABCD", kp0.Address())
+	selling := NativeAsset{}
+	buying := CreditAsset{"ABCD", kp0.Address()}
 	sellAmount := "50"
 	price := "0.02"
 	offerID := uint64(2497628)
@@ -500,8 +500,8 @@ func TestCreatePassiveOffer(t *testing.T) {
 	sourceAccount := makeTestAccount(kp1, "41137196761100")
 
 	createPassiveOffer := CreatePassiveOffer{
-		Selling: NewNativeAsset(),
-		Buying:  NewAsset("ABCD", kp0.Address()),
+		Selling: NativeAsset{},
+		Buying:  CreditAsset{"ABCD", kp0.Address()},
 		Amount:  "10",
 		Price:   "1.0"}
 
@@ -521,14 +521,14 @@ func TestPathPayment(t *testing.T) {
 	kp2 := newKeypair2()
 	sourceAccount := makeTestAccount(kp2, "187316408680450")
 
-	abcdAsset := NewAsset("ABCD", kp0.Address())
+	abcdAsset := CreditAsset{"ABCD", kp0.Address()}
 	pathPayment := PathPayment{
-		SendAsset:   NewNativeAsset(),
+		SendAsset:   NativeAsset{},
 		SendMax:     "10",
 		Destination: kp2.Address(),
-		DestAsset:   NewNativeAsset(),
+		DestAsset:   NativeAsset{},
 		DestAmount:  "1",
-		Path:        []Asset{*abcdAsset},
+		Path:        []Asset{abcdAsset},
 	}
 
 	tx := Transaction{
@@ -540,5 +540,73 @@ func TestPathPayment(t *testing.T) {
 	received := buildSignEncode(tx, kp2, t)
 	// https://www.stellar.org/laboratory/#xdr-viewer?input=AAAAAH4RyzTWNfXhqwLUoCw91aWkZtgIzY8SAVkIPc0uFVmYAAAAZAAAql0AAAADAAAAAAAAAAAAAAABAAAAAAAAAAIAAAAAAAAAAAX14QAAAAAAfhHLNNY19eGrAtSgLD3VpaRm2AjNjxIBWQg9zS4VWZgAAAAAAAAAAACYloAAAAABAAAAAUFCQ0QAAAAA4Nxt4XJcrGZRYrUvrOc1sooiQ%2BQdEk1suS1wo%2BoucsUAAAAAAAAAAS4VWZgAAABAZBS66leC0Y7UMg6jPYWh04lLWW9cLOdjWKKIWCjBTwRPmRhb5KyVsRepZdAvl8jmaLnbTk20uJ1yWbenbbbqCw%3D%3D%0A&type=TransactionEnvelope&network=test
 	expected := "AAAAAH4RyzTWNfXhqwLUoCw91aWkZtgIzY8SAVkIPc0uFVmYAAAAZAAAql0AAAADAAAAAAAAAAAAAAABAAAAAAAAAAIAAAAAAAAAAAX14QAAAAAAfhHLNNY19eGrAtSgLD3VpaRm2AjNjxIBWQg9zS4VWZgAAAAAAAAAAACYloAAAAABAAAAAUFCQ0QAAAAA4Nxt4XJcrGZRYrUvrOc1sooiQ+QdEk1suS1wo+oucsUAAAAAAAAAAS4VWZgAAABAZBS66leC0Y7UMg6jPYWh04lLWW9cLOdjWKKIWCjBTwRPmRhb5KyVsRepZdAvl8jmaLnbTk20uJ1yWbenbbbqCw=="
+	assert.Equal(t, expected, received, "Base 64 XDR should match")
+}
+
+func TestMemoText(t *testing.T) {
+	kp2 := newKeypair2()
+	sourceAccount := makeTestAccount(kp2, "3428320205078528")
+
+	tx := Transaction{
+		SourceAccount: &sourceAccount,
+		Network:       network.TestNetworkPassphrase,
+		Operations:    []Operation{&BumpSequence{BumpTo: 1}},
+		Memo:          MemoText("Twas brillig"),
+	}
+
+	received := buildSignEncode(tx, kp2, t)
+	// https://www.stellar.org/laboratory/#xdr-viewer?input=AAAAAH4RyzTWNfXhqwLUoCw91aWkZtgIzY8SAVkIPc0uFVmYAAAAZAAMLgoAAAABAAAAAAAAAAEAAAAMVHdhcyBicmlsbGlnAAAAAQAAAAAAAAALAAAAAAAAAAEAAAAAAAAAAS4VWZgAAABAstxxDHhcXkfmDkHbe2ck2QFjh6w69VlBzqOeHbT0p0ZxS6cQrhlFZBdvBb4T5qlo0RF4D06z04ygqDqrXmiSDg%3D%3D&type=TransactionEnvelope&network=test
+	expected := "AAAAAH4RyzTWNfXhqwLUoCw91aWkZtgIzY8SAVkIPc0uFVmYAAAAZAAMLgoAAAABAAAAAAAAAAEAAAAMVHdhcyBicmlsbGlnAAAAAQAAAAAAAAALAAAAAAAAAAEAAAAAAAAAAS4VWZgAAABAstxxDHhcXkfmDkHbe2ck2QFjh6w69VlBzqOeHbT0p0ZxS6cQrhlFZBdvBb4T5qlo0RF4D06z04ygqDqrXmiSDg=="
+	assert.Equal(t, expected, received, "Base 64 XDR should match")
+}
+
+func TestMemoID(t *testing.T) {
+	kp2 := newKeypair2()
+	sourceAccount := makeTestAccount(kp2, "3428320205078528")
+
+	tx := Transaction{
+		SourceAccount: &sourceAccount,
+		Network:       network.TestNetworkPassphrase,
+		Operations:    []Operation{&BumpSequence{BumpTo: 1}},
+		Memo:          MemoID(314159),
+	}
+
+	received := buildSignEncode(tx, kp2, t)
+	// https://www.stellar.org/laboratory/#xdr-viewer?input=AAAAAH4RyzTWNfXhqwLUoCw91aWkZtgIzY8SAVkIPc0uFVmYAAAAZAAMLgoAAAABAAAAAAAAAAIAAAAAAATLLwAAAAEAAAAAAAAACwAAAAAAAAABAAAAAAAAAAEuFVmYAAAAQCKqa1rqle3g8Ksdvl9J67sKdHoXvVXgsmV2QVMZskO%2BDhGSnyxAZBjGf7MFWuz1JoXr5VMo0zphTBRjtMWQvAA%3D&type=TransactionEnvelope&network=test
+	expected := "AAAAAH4RyzTWNfXhqwLUoCw91aWkZtgIzY8SAVkIPc0uFVmYAAAAZAAMLgoAAAABAAAAAAAAAAIAAAAAAATLLwAAAAEAAAAAAAAACwAAAAAAAAABAAAAAAAAAAEuFVmYAAAAQCKqa1rqle3g8Ksdvl9J67sKdHoXvVXgsmV2QVMZskO+DhGSnyxAZBjGf7MFWuz1JoXr5VMo0zphTBRjtMWQvAA="
+	assert.Equal(t, expected, received, "Base 64 XDR should match")
+}
+
+func TestMemoHash(t *testing.T) {
+	kp2 := newKeypair2()
+	sourceAccount := makeTestAccount(kp2, "3428320205078528")
+
+	tx := Transaction{
+		SourceAccount: &sourceAccount,
+		Network:       network.TestNetworkPassphrase,
+		Operations:    []Operation{&BumpSequence{BumpTo: 1}},
+		Memo:          MemoHash([32]byte{0x01}),
+	}
+
+	received := buildSignEncode(tx, kp2, t)
+	// https://www.stellar.org/laboratory/#xdr-viewer?input=AAAAAH4RyzTWNfXhqwLUoCw91aWkZtgIzY8SAVkIPc0uFVmYAAAAZAAMLgoAAAABAAAAAAAAAAMBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACwAAAAAAAAABAAAAAAAAAAEuFVmYAAAAQJeRgV2MPt3E4IktlsDm6herfaR%2F5VTplcUUwFgBMbPyIxjZW8GEZAIUxjWBV7T9XWjzLrw7pEyldeOcC76PYwc%3D&type=TransactionEnvelope&network=test
+	expected := "AAAAAH4RyzTWNfXhqwLUoCw91aWkZtgIzY8SAVkIPc0uFVmYAAAAZAAMLgoAAAABAAAAAAAAAAMBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACwAAAAAAAAABAAAAAAAAAAEuFVmYAAAAQJeRgV2MPt3E4IktlsDm6herfaR/5VTplcUUwFgBMbPyIxjZW8GEZAIUxjWBV7T9XWjzLrw7pEyldeOcC76PYwc="
+	assert.Equal(t, expected, received, "Base 64 XDR should match")
+}
+
+func TestMemoReturn(t *testing.T) {
+	kp2 := newKeypair2()
+	sourceAccount := makeTestAccount(kp2, "3428320205078528")
+
+	tx := Transaction{
+		SourceAccount: &sourceAccount,
+		Network:       network.TestNetworkPassphrase,
+		Operations:    []Operation{&BumpSequence{BumpTo: 1}},
+		Memo:          MemoReturn([32]byte{0x01}),
+	}
+
+	received := buildSignEncode(tx, kp2, t)
+	// https://www.stellar.org/laboratory/#xdr-viewer?input=AAAAAH4RyzTWNfXhqwLUoCw91aWkZtgIzY8SAVkIPc0uFVmYAAAAZAAMLgoAAAABAAAAAAAAAAQBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACwAAAAAAAAABAAAAAAAAAAEuFVmYAAAAQNhrY46fggs%2BTnOYvh3ILgWqmXjkW0968s00si5RLdxFh2%2FA7TTGgmBTarTEtF21hsAyNmW%2B0YkqVVzJ7eFAXAk%3D&type=TransactionEnvelope&network=test
+	expected := "AAAAAH4RyzTWNfXhqwLUoCw91aWkZtgIzY8SAVkIPc0uFVmYAAAAZAAMLgoAAAABAAAAAAAAAAQBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAACwAAAAAAAAABAAAAAAAAAAEuFVmYAAAAQNhrY46fggs+TnOYvh3ILgWqmXjkW0968s00si5RLdxFh2/A7TTGgmBTarTEtF21hsAyNmW+0YkqVVzJ7eFAXAk="
 	assert.Equal(t, expected, received, "Base 64 XDR should match")
 }
