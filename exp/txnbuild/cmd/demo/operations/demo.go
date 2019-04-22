@@ -64,7 +64,7 @@ func Reset(client *horizonclient.Client, keys []key) {
 		for _, o := range offers.Embedded.Records {
 			fmt.Println("    ", o)
 			txe, err := deleteOffer(k.Account, uint64(o.ID), k)
-			dieIfError("Problem building deleteOffer op", err)
+			dieIfError("problem building deleteOffer op", err)
 			fmt.Printf("        Deleting offer %d...\n", o.ID)
 			resp := submit(client, txe)
 			fmt.Println(resp.TransactionSuccessToString())
@@ -87,14 +87,14 @@ func Reset(client *horizonclient.Client, keys []key) {
 			// Send the asset back to the issuer...
 			fmt.Printf("        Sending %v of surplus asset %s:%s back to issuer...\n", b.Balance, asset.Code, asset.Issuer)
 			txe, err := payment(k.Account, asset.Issuer, b.Balance, asset, k)
-			dieIfError("Problem building payment op", err)
+			dieIfError("problem building payment op", err)
 			resp := submit(client, txe)
 			fmt.Println(resp.TransactionSuccessToString())
 
 			// Delete the now-empty trustline...
 			fmt.Printf("        Deleting trustline for asset %s:%s...\n", b.Code, b.Issuer)
 			txe, err = deleteTrustline(k.Account, asset, k)
-			dieIfError("Problem building deleteTrustline op", err)
+			dieIfError("problem building deleteTrustline op", err)
 			resp = submit(client, txe)
 			fmt.Println(resp.TransactionSuccessToString())
 		}
@@ -105,7 +105,7 @@ func Reset(client *horizonclient.Client, keys []key) {
 			decodedV, _ := k.Account.GetData(dataKey)
 			fmt.Printf("    Deleting data entry '%s' -> '%s'...\n", dataKey, decodedV)
 			txe, err := deleteData(k.Account, dataKey, k)
-			dieIfError("Problem building manageData op", err)
+			dieIfError("problem building manageData op", err)
 			resp := submit(client, txe)
 			fmt.Println(resp.TransactionSuccessToString())
 		}
@@ -118,7 +118,7 @@ func Reset(client *horizonclient.Client, keys []key) {
 		}
 		fmt.Printf("    Merging account %s back to friendbot (%s)...\n", k.Address, friendbotAddress)
 		txe, err := mergeAccount(k.Account, friendbotAddress, k)
-		dieIfError("Problem building mergeAccount op", err)
+		dieIfError("problem building mergeAccount op", err)
 		resp := submit(client, txe)
 		fmt.Println(resp.TransactionSuccessToString())
 	}
@@ -130,7 +130,7 @@ func Initialise(client *horizonclient.Client, keys []key) {
 	// Fund the first account from friendbot
 	fmt.Printf("    Funding account %s from friendbot...\n", keys[0].Address)
 	_, err := fund(keys[0].Address)
-	dieIfError(fmt.Sprintf("Couldn't fund account %s from friendbot", keys[0].Address), err)
+	dieIfError(fmt.Sprintf("couldn't fund account %s from friendbot", keys[0].Address), err)
 
 	keys = loadAccounts(client, keys)
 
@@ -138,7 +138,7 @@ func Initialise(client *horizonclient.Client, keys []key) {
 	for i := 1; i < len(keys); i++ {
 		fmt.Printf("    Funding account %s from account %s...\n", keys[i].Address, keys[0].Address)
 		txe, err := createAccount(keys[0].Account, keys[i].Address, keys[0])
-		dieIfError("Problem building createAccount op", err)
+		dieIfError("problem building createAccount op", err)
 		resp := submit(client, txe)
 		fmt.Println(resp.TransactionSuccessToString())
 	}
@@ -152,7 +152,7 @@ func TXError(client *horizonclient.Client, keys []key) {
 	// Set the seq number to 1 (invalid)
 	// Create the transaction
 	txe, err := bumpSequence(keys[0].Account, -1, keys[0])
-	dieIfError("Problem building createAccount op", err)
+	dieIfError("problem building createAccount op", err)
 	resp := submit(client, txe)
 	// Submit
 	// Inspect and print error
