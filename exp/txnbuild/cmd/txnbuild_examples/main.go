@@ -612,8 +612,9 @@ func PrintHorizonError(hError *horizonclient.Error) error {
 
 	resultCodes, err := hError.ResultCodes()
 	if err != nil {
-		return errors.Wrap(err, "Couldn't read ResultCodes")
+		return errors.Wrap(err, "couldn't unmarshal result_codes")
 	}
+
 	log.Println("TransactionCode:", resultCodes.TransactionCode)
 	log.Println("OperationCodes:")
 	for _, code := range resultCodes.OperationCodes {
@@ -622,13 +623,13 @@ func PrintHorizonError(hError *horizonclient.Error) error {
 
 	resultString, err := hError.ResultString()
 	if err != nil {
-		return errors.Wrap(err, "Couldn't read ResultString")
+		return errors.Wrap(err, "couldn't unmarshal result_xdr")
 	}
 	log.Println("TransactionResult XDR (base 64):", resultString)
 
 	envelope, err := hError.Envelope()
 	if err != nil {
-		return errors.Wrap(err, "Couldn't read Envelope")
+		return errors.Wrap(err, "couldn't unmarshal envelope_xdr")
 	}
 	log.Println("TransactionEnvelope XDR:", envelope)
 
