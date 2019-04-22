@@ -27,15 +27,21 @@ const friendbotAddress = "GAIH3ULLFQ4DGSECF2AR555KZ4KNDGEKN4AFI4SU2M7B43MGK3QJZN
 
 func loadAccounts(client *horizonclient.Client, keys []key) []key {
 	for i, k := range keys {
-		accountRequest := horizonclient.AccountRequest{AccountID: k.Address}
-		horizonSourceAccount, err := client.AccountDetail(accountRequest)
-		if err == nil {
-			keys[i].Account = &horizonSourceAccount
-			keys[i].Exists = true
-		}
+		keys[i].Account = loadAccount(client, k.Address)
+		keys[i].Exists = true
 	}
 
 	return keys
+}
+
+func loadAccount(client *horizonclient.Client, address string) *horizon.Account {
+	accountRequest := horizonclient.AccountRequest{AccountID: address}
+	horizonSourceAccount, err := client.AccountDetail(accountRequest)
+	if err != nil {
+		dieIfError(fmt.Sprintf("couldn't get account detail for %s", address), err)
+	}
+
+	return &horizonSourceAccount
 }
 
 // Reset removes all test accounts created by this demo. All funds are transferred back to Friendbot.
@@ -129,10 +135,11 @@ func Reset(client *horizonclient.Client, keys []key) {
 func Initialise(client *horizonclient.Client, keys []key) {
 	// Fund the first account from friendbot
 	fmt.Printf("    Funding account %s from friendbot...\n", keys[0].Address)
-	_, err := fund(keys[0].Address)
+	_, err := fund(client, keys[0].Address)
 	dieIfError(fmt.Sprintf("couldn't fund account %s from friendbot", keys[0].Address), err)
 
-	keys = loadAccounts(client, keys)
+	keys[0].Account = loadAccount(client, keys[0].Address)
+	keys[0].Exists = true
 
 	// Fund the others using the create account operation
 	for i := 1; i < len(keys); i++ {
@@ -159,8 +166,9 @@ func TXError(client *horizonclient.Client, keys []key) {
 	fmt.Println(resp.TransactionSuccessToString())
 }
 
-func fund(address string) (resp *http.Response, err error) {
-	resp, err = http.Get("https://friendbot.stellar.org/?addr=" + address)
+func fund(client *horizonclient.Client, address string) (resp *http.Response, err error) {
+	// resp, err = http.Get("https://friendbot.stellar.org/?addr=" + address)
+	resp, err = http.Get(client.HorizonURL + "friendbot?addr=" + address)
 	if err != nil {
 		return nil, err
 	}
@@ -175,6 +183,7 @@ func bumpSequence(source *horizon.Account, seqNum int64, signer key) (string, er
 	tx := txnbuild.Transaction{
 		SourceAccount: source,
 		Operations:    []txnbuild.Operation{&bumpSequenceOp},
+		Timebounds:    txnbuild.NewTimeout(300),
 		Network:       network.TestNetworkPassphrase,
 	}
 
@@ -195,6 +204,7 @@ func createAccount(source *horizon.Account, dest string, signer key) (string, er
 	tx := txnbuild.Transaction{
 		SourceAccount: source,
 		Operations:    []txnbuild.Operation{&createAccountOp},
+		Timebounds:    txnbuild.NewTimeout(300),
 		Network:       network.TestNetworkPassphrase,
 	}
 
@@ -214,6 +224,7 @@ func deleteData(source *horizon.Account, dataKey string, signer key) (string, er
 	tx := txnbuild.Transaction{
 		SourceAccount: source,
 		Operations:    []txnbuild.Operation{&manageDataOp},
+		Timebounds:    txnbuild.NewTimeout(300),
 		Network:       network.TestNetworkPassphrase,
 	}
 
@@ -234,6 +245,7 @@ func manageData(source *horizon.Account, dataKey string, dataValue string, signe
 	tx := txnbuild.Transaction{
 		SourceAccount: source,
 		Operations:    []txnbuild.Operation{&manageDataOp},
+		Timebounds:    txnbuild.NewTimeout(300),
 		Network:       network.TestNetworkPassphrase,
 	}
 
@@ -255,6 +267,7 @@ func payment(source *horizon.Account, dest, amount string, asset txnbuild.Asset,
 	tx := txnbuild.Transaction{
 		SourceAccount: source,
 		Operations:    []txnbuild.Operation{&paymentOp},
+		Timebounds:    txnbuild.NewTimeout(300),
 		Network:       network.TestNetworkPassphrase,
 	}
 
@@ -272,6 +285,7 @@ func deleteTrustline(source *horizon.Account, asset txnbuild.Asset, signer key) 
 	tx := txnbuild.Transaction{
 		SourceAccount: source,
 		Operations:    []txnbuild.Operation{&deleteTrustline},
+		Timebounds:    txnbuild.NewTimeout(300),
 		Network:       network.TestNetworkPassphrase,
 	}
 
@@ -289,6 +303,7 @@ func deleteOffer(source *horizon.Account, offerID uint64, signer key) (string, e
 	tx := txnbuild.Transaction{
 		SourceAccount: source,
 		Operations:    []txnbuild.Operation{&deleteOffer},
+		Timebounds:    txnbuild.NewTimeout(300),
 		Network:       network.TestNetworkPassphrase,
 	}
 
@@ -308,6 +323,7 @@ func mergeAccount(source *horizon.Account, destAddress string, signer key) (stri
 	tx := txnbuild.Transaction{
 		SourceAccount: source,
 		Operations:    []txnbuild.Operation{&accountMerge},
+		Timebounds:    txnbuild.NewTimeout(300),
 		Network:       network.TestNetworkPassphrase,
 	}
 
@@ -437,7 +453,7 @@ func printHorizonError(hError *horizonclient.Error) error {
 	for _, op := range txe.Operations {
 		log.Println("Operations.SourceAccount:", op.SourceAccount)
 		log.Println("Operations.Body.Type:", op.Body.Type)
-		log.Println("Operations.Body.BumpSequenceOp.BumpTo:", op.Body.BumpSequenceOp.BumpTo)
+		// log.Println("Operations.Body.BumpSequenceOp.BumpTo:", op.Body.BumpSequenceOp.BumpTo)
 	}
 	log.Println("Ext:", txe.Ext)
 
