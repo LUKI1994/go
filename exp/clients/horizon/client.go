@@ -361,9 +361,7 @@ func (c *Client) SubmitTransaction(transaction txnbuild.Transaction) (txSuccess 
 		return
 	}
 
-	request := submitRequest{endpoint: "transactions", transactionXdr: txeBase64}
-	err = c.sendRequest(request, &txSuccess)
-	return
+	return c.SubmitTransactionXDR(txeBase64)
 }
 
 // Transactions returns stellar transactions (https://www.stellar.org/developers/horizon/reference/resources/transaction.html)
