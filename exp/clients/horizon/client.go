@@ -27,7 +27,7 @@ func (c *Client) sendRequest(hr HorizonRequest, a interface{}) (err error) {
 		return
 	}
 
-	c.HorizonURL = c.getHorizonURL()
+	c.HorizonURL = c.fixHorizonURL()
 	var req *http.Request
 	// check if it is a submitRequest
 	_, ok := hr.(submitRequest)
@@ -193,8 +193,8 @@ func (c *Client) setClientAppHeaders(req *http.Request) {
 	req.Header.Set("X-App-Version", c.AppVersion)
 }
 
-// getHorizonUrl strips all slashes(/) at the end of HorizonURL if any, then adds a single slash
-func (c *Client) getHorizonURL() string {
+// fixHorizonURL strips all slashes(/) at the end of HorizonURL if any, then adds a single slash
+func (c *Client) fixHorizonURL() string {
 	return strings.TrimRight(c.HorizonURL, "/") + "/"
 }
 
@@ -204,8 +204,8 @@ func (c *Client) SetHorizonTimeOut(t uint) *Client {
 	return c
 }
 
-// GetHorizonTimeOut returns the current timeout for an horizon client
-func (c *Client) GetHorizonTimeOut() time.Duration {
+// HorizonTimeOut returns the current timeout for an horizon client
+func (c *Client) HorizonTimeOut() time.Duration {
 	return c.horizonTimeOut
 }
 
