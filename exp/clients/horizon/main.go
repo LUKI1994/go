@@ -295,3 +295,12 @@ type TradeAggregationRequest struct {
 	Order              Order
 	Limit              uint
 }
+
+// ServerTimeRecord contains data for the current unix time of an horizon server instance, and the local time when it was recorded
+type ServerTimeRecord struct {
+	ServerTime        int64
+	LocalTimeRecorded int64
+}
+
+// ServerTimeMap holds the ServerTimeRecord for different horizon instances
+var ServerTimeMap = make(map[string]ServerTimeRecord)

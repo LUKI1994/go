@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/stellar/go/exp/txnbuild"
+
 	"github.com/manucorporat/sse"
 	hProtocol "github.com/stellar/go/protocols/horizon"
 	"github.com/stellar/go/protocols/horizon/operations"
@@ -460,6 +462,24 @@ func (c *Client) StreamLedgers(ctx context.Context, request LedgerRequest, handl
 // OrderBookHandler is a user-supplied function that is executed for each streamed order received.
 func (c *Client) StreamOrderBooks(ctx context.Context, request OrderBookRequest, handler OrderBookHandler) error {
 	return request.StreamOrderBooks(ctx, c, handler)
+}
+
+// FetchTimebounds get timebounds for N seconds from now using the server time of an horizon instance.
+// It defaults to localtime when the server time is not available
+// Note that this will generate your timebounds when you init the transaction, not when you build or submit the transaction! So give yourself enough time to get the transaction built and signed before submitting.
+func (c *Client) FetchTimebounds(seconds int64) txnbuild.Timebounds {
+	serverURL, err := url.Parse(c.HorizonURL)
+	if err != nil {
+		panic("Unable to parse horizon url")
+	}
+	currentTime := currentServerTime(serverURL.Hostname())
+	if currentTime != 0 {
+		return txnbuild.NewTimebounds(0, currentTime+seconds)
+	}
+
+	// return local time if no server time has been recorded
+	// to do: query an endpoint to get the most current time. Implement this after we add retry logic to client.
+	return txnbuild.NewTimebounds(0, time.Now().Unix()+seconds)
 }
 
 // ensure that the horizon client implements ClientInterface
