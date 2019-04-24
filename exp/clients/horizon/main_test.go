@@ -915,16 +915,16 @@ func TestFetchTimebounds(t *testing.T) {
 	client := DefaultPublicNetClient
 	_, err := client.Metrics()
 
-	st := client.FetchTimebounds(100)
+	st, err := client.FetchTimebounds(100)
 	if assert.NoError(t, err) {
 		assert.IsType(t, ServerTimeMap["horizon.stellar.org"], ServerTimeRecord{})
 		assert.Equal(t, st.MinTime, int64(0))
 	}
 
-	newRecord := ServerTimeRecord{ServerTime: 100, LocalTimeRecorded: time.Now().Unix()}
+	newRecord := ServerTimeRecord{ServerTime: 100, LocalTimeRecorded: time.Now().UTC().Unix()}
 
 	ServerTimeMap["horizon.stellar.org"] = newRecord
-	st = client.FetchTimebounds(100)
+	st, err = client.FetchTimebounds(100)
 	assert.IsType(t, st, txnbuild.Timebounds{})
 	assert.Equal(t, st.MinTime, int64(0))
 	// time should be 200, serverTime + 100seconds

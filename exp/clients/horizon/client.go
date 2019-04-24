@@ -59,7 +59,7 @@ func (c *Client) sendRequest(hr HorizonRequest, a interface{}) (err error) {
 	return
 }
 
-// stream handles connections to endpoints that support streaming on an horizon server
+// stream handles connections to endpoints that support streaming on a horizon server
 func (c *Client) stream(
 	ctx context.Context,
 	streamURL string,
@@ -204,7 +204,7 @@ func (c *Client) SetHorizonTimeOut(t uint) *Client {
 	return c
 }
 
-// HorizonTimeOut returns the current timeout for an horizon client
+// HorizonTimeOut returns the current timeout for a horizon client
 func (c *Client) HorizonTimeOut() time.Duration {
 	return c.horizonTimeOut
 }
@@ -464,22 +464,23 @@ func (c *Client) StreamOrderBooks(ctx context.Context, request OrderBookRequest,
 	return request.StreamOrderBooks(ctx, c, handler)
 }
 
-// FetchTimebounds get timebounds for N seconds from now using the server time of an horizon instance.
-// It defaults to localtime when the server time is not available
-// Note that this will generate your timebounds when you init the transaction, not when you build or submit the transaction! So give yourself enough time to get the transaction built and signed before submitting.
-func (c *Client) FetchTimebounds(seconds int64) txnbuild.Timebounds {
+// FetchTimebounds provides timebounds for N seconds from now using the server time of the horizon instance.
+// It defaults to localtime when the server time is not available.
+// Note that this will generate your timebounds when you init the transaction, not when you build or submit
+// the transaction! So give yourself enough time to get the transaction built and signed before submitting.
+func (c *Client) FetchTimebounds(seconds int64) (txnbuild.Timebounds, error) {
 	serverURL, err := url.Parse(c.HorizonURL)
 	if err != nil {
-		panic("Unable to parse horizon url")
+		return txnbuild.Timebounds{}, errors.Wrap(err, "unable to parse horizon url")
 	}
 	currentTime := currentServerTime(serverURL.Hostname())
 	if currentTime != 0 {
-		return txnbuild.NewTimebounds(0, currentTime+seconds)
+		return txnbuild.NewTimebounds(0, currentTime+seconds), nil
 	}
 
-	// return local time if no server time has been recorded
+	// return a timebounds based on local time if no server time has been recorded
 	// to do: query an endpoint to get the most current time. Implement this after we add retry logic to client.
-	return txnbuild.NewTimebounds(0, time.Now().Unix()+seconds)
+	return txnbuild.NewTimeout(seconds), nil
 }
 
 // ensure that the horizon client implements ClientInterface
